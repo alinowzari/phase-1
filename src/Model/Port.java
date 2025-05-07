@@ -1,22 +1,49 @@
 package Model;
 
 import java.awt.*;
+import java.util.ArrayList;
 
 public class Port {
     private int x, y; // Position relative to NetworkSystem
     private PortType type;
     private PortShape shape;
-
+    private NetworkSystem parentSystem;
     public static final int SIZE = 20;    // Bigger size
     private static final int CLICK_RADIUS = 12;
+    private ArrayList<Packet> packets;
+    private Port EvenPort;
 
     public Port(int x, int y, PortType type, PortShape shape) {
         this.x = x;
         this.y = y;
         this.type = type;
         this.shape = shape;
+        packets = new ArrayList<>();
     }
+    public Port(int x, int y, PortType type, PortShape shape, Port EvenPort) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.shape = shape;
+        this.EvenPort = EvenPort;
+        packets = new ArrayList<>();
 
+    }
+    public void setParentSystem(NetworkSystem parent) {
+        this.parentSystem = parent;
+    }
+    public NetworkSystem getParentSystem() {
+        return parentSystem;
+    }
+    public void setEvenPort(Port EvenPort) {
+        this.EvenPort = EvenPort;
+    }
+    public void addPacket(Packet packet) {
+        packets.add(packet);
+    }
+    public ArrayList<Packet> getPackets() {
+        return packets;
+    }
     public void draw(Graphics2D g, int offsetX, int offsetY) {
         int drawX = offsetX + x;
         int drawY = offsetY + y;
@@ -81,9 +108,35 @@ public class Port {
     public PortShape getShape() {
         return shape;
     }
-
-    public Point getPortCenter() {
-        return new Point(x, y);
+    public Port getEvenPort() {
+        return EvenPort;
     }
+    public Point getPortCenter() {
+        if (parentSystem == null) return new Point(0, 0); // fallback
 
+        Point sysPos = parentSystem.getPosition();
+        int centerX = sysPos.x + x;
+        int centerY = sysPos.y + y;
+
+        if (shape == PortShape.SQUARE) {
+            if (type == PortType.OUTPUT) {
+                centerX -= 20;
+            }
+        } else if (shape == PortShape.TRIANGLE) {
+            if (type == PortType.OUTPUT) {
+                centerX -= 20;
+            }
+        }
+
+        centerX += SIZE / 2;
+        centerY += SIZE / 2;
+
+        return new Point(centerX, centerY);
+    }
+    public void ChangePort() {
+        for (Packet packet : packets) {
+            EvenPort.addPacket(packet);
+        }
+        packets.clear();
+    }
 }

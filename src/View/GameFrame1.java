@@ -13,8 +13,8 @@ public class GameFrame1 extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setUndecorated(true);
-
-        GamePanel1 panel = new GamePanel1();
+        Systems systems = new Systems();
+        GamePanel1 panel = new GamePanel1(systems);
         this.add(panel);
         setVisible(true);
     }

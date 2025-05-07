@@ -9,22 +9,27 @@ import java.awt.event.*;
 import java.util.ArrayList;
 
 public class PortController implements MouseListener, MouseMotionListener, ActionListener {
-    private GamePanel1 panel;
-    private Port startPort = null;  // Selected starting port
+    private final GamePanel1 panel;
+    private final Systems systems;
+    private final ArrayList<Line> lines;
+    private final PacketMovementController packetController;
+
+    private Port startPort = null;
+    private Line tempLine;
     private int mouseX, mouseY;
-    private ArrayList<Line> lines;
-    private Line tempLine;          // 🔥 TEMPORARY LINE for dragging!
 
-    private Timer repaintTimer;
+    private final Timer repaintTimer;
 
-    public PortController(GamePanel1 panel, ArrayList<Line> lines) {
+    public PortController(GamePanel1 panel, Systems systems, ArrayList<Line> lines, PacketMovementController packetController) {
         this.panel = panel;
+        this.systems = systems;
         this.lines = lines;
+        this.packetController = packetController;
 
         panel.addMouseListener(this);
         panel.addMouseMotionListener(this);
 
-        repaintTimer = new Timer(16, this); // 60 FPS repaint
+        repaintTimer = new Timer(16, this);
         repaintTimer.start();
     }
 
@@ -43,14 +48,25 @@ public class PortController implements MouseListener, MouseMotionListener, Actio
     public int getMouseY() {
         return mouseY;
     }
-
+    private boolean isPortConnected(Port port) {
+        for (Line line : lines) {
+            if (line.getStartPort().equals(port) || line.getEndPort().equals(port)) {
+                return true;
+            }
+        }
+        return false;
+    }
     @Override
     public void mousePressed(MouseEvent e) {
-        for (NetworkSystem sys : panel.getSystems()) {
+        for (NetworkSystem sys : systems.getSystems()) {
             for (Port port : sys.getPorts()) {
                 if (port.isClicked(e.getX(), e.getY(), sys.getPosition().x, sys.getPosition().y)) {
+                    if (isPortConnected(port)) {
+                        System.out.println("❌ This port is already connected.");
+                        return;
+                    }
                     startPort = port;
-                    tempLine = new Line(startPort); // 🔥 Start a temp line
+                    tempLine = new Line(startPort);
                     tempLine.setTempEnd(e.getX(), e.getY());
                     return;
                 }
@@ -58,19 +74,18 @@ public class PortController implements MouseListener, MouseMotionListener, Actio
         }
     }
 
+
     @Override
     public void mouseReleased(MouseEvent e) {
         if (startPort != null) {
             Port closestPort = null;
             double closestDistance = Double.MAX_VALUE;
 
-            // Find the closest port to mouse release
-            for (NetworkSystem sys : panel.getSystems()) {
+            for (NetworkSystem sys : systems.getSystems()) {
                 for (Port port : sys.getPorts()) {
-                    if (port != startPort) { // Don't connect to self
-                        Point portCenter = panel.getPortCenter(port);
-                        double dist = Math.hypot(e.getX() - portCenter.x, e.getY() - portCenter.y);
-
+                    if (port != startPort) {
+                        Point portCenter = port.getPortCenter();
+                        double dist = portCenter.distance(e.getPoint());
                         if (dist < closestDistance) {
                             closestDistance = dist;
                             closestPort = port;
@@ -79,42 +94,37 @@ public class PortController implements MouseListener, MouseMotionListener, Actio
                 }
             }
 
-            // Threshold distance (release close enough)
             final double CONNECTION_RADIUS = 20;
 
             if (closestPort != null && closestDistance <= CONNECTION_RADIUS) {
                 if (closestPort.getShape() == startPort.getShape()) {
-                    System.out.println("✅ New line created (nearby)");
-                    lines.add(new Line(startPort, closestPort));
+                    Line newLine = new Line(startPort, closestPort);
+                    lines.add(newLine);
+                    System.out.println("✅ New line created.");
+
+                    // 🔥 Notify packet controller
+//                    packetController.onLineAdded(newLine);
                 } else {
-                    System.out.println("❌ Shapes do not match. Cannot connect.");
+                    System.out.println("❌ Shapes do not match.");
                 }
             } else {
-                System.out.println("❌ No port close enough to connect.");
+                System.out.println("❌ No port close enough.");
             }
         }
 
-        // Always clear dragging state
         startPort = null;
         tempLine = null;
     }
 
-    @Override
-    public void mouseDragged(MouseEvent e) {
+    @Override public void mouseDragged(MouseEvent e) {
         mouseX = e.getX();
         mouseY = e.getY();
-
-        // 🔥 Update the temp line if dragging
         if (tempLine != null) {
             tempLine.setTempEnd(mouseX, mouseY);
         }
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        panel.repaint();
-    }
-
+    @Override public void actionPerformed(ActionEvent e) { panel.repaint(); }
     @Override public void mouseMoved(MouseEvent e) {}
     @Override public void mouseClicked(MouseEvent e) {}
     @Override public void mouseEntered(MouseEvent e) {}
