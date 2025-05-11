@@ -13,6 +13,7 @@ public class PortController implements MouseListener, MouseMotionListener, Actio
     private final Systems systems;
     private final ArrayList<Line> lines;
     private final PacketMovementController packetController;
+    private boolean canDrawTempLine = true;
 
     private Port startPort = null;
     private Line tempLine;
@@ -97,17 +98,31 @@ public class PortController implements MouseListener, MouseMotionListener, Actio
             final double CONNECTION_RADIUS = 20;
 
             if (closestPort != null && closestDistance <= CONNECTION_RADIUS) {
-                if (closestPort.getShape() == startPort.getShape()) {
-                    Line newLine = new Line(startPort, closestPort);
-                    lines.add(newLine);
-                    System.out.println("✅ New line created.");
+                if (closestPort.getShape() == startPort.getShape() && !(closestPort.getParentSystem().equals(startPort.getParentSystem()))) {
+                    Point p1 = startPort.getPortCenter();
+                    Point p2 = closestPort.getPortCenter();
+                    double newLineLength = p1.distance(p2);
 
-                    // 🔥 Notify packet controller
-//                    packetController.onLineAdded(newLine);
-                } else {
+                    double currentLength = systems.getCurrentLineLength();
+                    double maxAllowed = systems.maxLineLength;
+
+                    if(maxAllowed>=newLineLength+currentLength) {
+                        Line newLine = new Line(startPort, closestPort);
+                        lines.add(newLine);
+                        System.out.println("✅ New line created.");
+                        System.out.println("this is the maximum length left "+maxAllowed);
+                        System.out.println("this is length of the new line "+newLineLength);
+                        System.out.println("this is current "+currentLength);
+                    }
+                    else{
+                        System.out.println("no length left");
+                    }
+                }
+                else {
                     System.out.println("❌ Shapes do not match.");
                 }
-            } else {
+            }
+            else {
                 System.out.println("❌ No port close enough.");
             }
         }
@@ -116,13 +131,38 @@ public class PortController implements MouseListener, MouseMotionListener, Actio
         tempLine = null;
     }
 
-    @Override public void mouseDragged(MouseEvent e) {
+    @Override
+    public void mouseDragged(MouseEvent e) {
         mouseX = e.getX();
         mouseY = e.getY();
-        if (tempLine != null) {
-            tempLine.setTempEnd(mouseX, mouseY);
+
+        if (tempLine != null && startPort != null){
+            Point from = startPort.getPortCenter();
+            Point to = new Point(mouseX, mouseY);
+
+            double currentLength = systems.getCurrentLineLength();
+            double maxAllowed = systems.maxLineLength;
+            double remaining = maxAllowed - currentLength;
+
+            double intendedLength = from.distance(to);
+
+            if (intendedLength > remaining) {
+                // Clamp to max possible distance
+                double ratio = remaining / intendedLength;
+                int clampedX = (int) (from.x + (to.x - from.x) * ratio);
+                int clampedY = (int) (from.y + (to.y - from.y) * ratio);
+                tempLine.setTempEnd(clampedX, clampedY);
+            } else {
+                // Allow free movement
+                tempLine.setTempEnd(mouseX, mouseY);
+            }
         }
     }
+    public boolean canDrawTempLine() {
+        return canDrawTempLine;
+    }
+
+
 
     @Override public void actionPerformed(ActionEvent e) { panel.repaint(); }
     @Override public void mouseMoved(MouseEvent e) {}

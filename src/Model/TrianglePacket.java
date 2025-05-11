@@ -1,11 +1,13 @@
 package Model;
 
 import java.awt.*;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 public class TrianglePacket extends Packet {
 
-    public TrianglePacket(Port port) {
-        super(port);
+    public TrianglePacket(Port port, String name) {
+        super(port, name);
         this.size = 3;
     }
 
@@ -21,4 +23,19 @@ public class TrianglePacket extends Packet {
         g.setColor(Color.BLUE);
         g.fillPolygon(triangle);
     }
+    @Override
+    public ArrayList<Point> getAllPoints(Point center) {
+        ArrayList<Point> points = new ArrayList<>();
+        int h = size;
+
+        for (int dy = -h / 2; dy <= h / 2; dy++) {
+            int widthAtY = (h / 2) - Math.abs(dy);
+            for (int dx = 0; dx <= widthAtY; dx++) {
+                points.add(new Point(center.x + dx, center.y + dy));
+            }
+        }
+
+        return points;
+    }
+
 }

@@ -1,12 +1,15 @@
 package Model;
 
+import java.awt.*;
 import java.util.ArrayList;
 
 public class Systems {
     ArrayList<NetworkSystem> systems;
     ArrayList<Line> Lines;
-    public Systems() {
+    public double maxLineLength;
+    public Systems(double maxLineLength) {
         systems = new ArrayList<>();
+        this.maxLineLength = maxLineLength;
     }
     public ArrayList<NetworkSystem> getSystems() {
         return systems;
@@ -39,5 +42,29 @@ public class Systems {
             }
         }
         return true;
+    }
+    public double getCurrentLineLength() {
+        double total = 0;
+        for (Line line : Lines) {
+            Point p1 = line.getStartPort().getPortCenter();
+            Point p2 = line.getEndPort() != null ? line.getEndPort().getPortCenter() : line.getTempEnd();
+            total += p1.distance(p2);
+        }
+        return total;
+    }
+    public ArrayList<Packet> getAllPackets() {
+        ArrayList<Packet> packets = new ArrayList<>();
+        for (NetworkSystem system : systems) {
+            for (Port port : system.getPorts()) {
+                packets.addAll(port.getPackets());
+            }
+        }
+        return packets;
+    }
+    public int firstSystemPackets(){
+        return systems.get(0).packetCount();
+    }
+    public NetworkSystem getFirstSystem() {
+        return systems.get(0);
     }
 }

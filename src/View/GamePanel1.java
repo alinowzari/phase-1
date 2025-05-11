@@ -1,9 +1,6 @@
 package View;
 
-import Controller.ClickButtonController;
-import Controller.LineController;
-import Controller.PacketMovementController;
-import Controller.PortController;
+import Controller.*;
 import Model.*;
 
 import javax.swing.*;
@@ -17,71 +14,93 @@ public class GamePanel1 extends JPanel {
     private final LineController lineController;
     private final PacketMovementController packetController;
     private final ClickButtonController buttonController;
+    private final MovingPackets movingPackets;
+    private final CollisionController collisionController;
+    private final LengthBoxPanel lengthBox;
 
     public GamePanel1(Systems systems) {
         this.systems = systems;
+        movingPackets = new MovingPackets();
         setBackground(new Color(67, 61, 61));
+        setLayout(null); // absolute layout for placing components
 
-        // System S1
+        // Length UI box
+        setupNetworkSystems();  // 💡 Extracted setup into a helper method
+
+        systems.setLines(lines);
+        lengthBox = new LengthBoxPanel(systems);
+        lengthBox.setBounds(900, 10, 60, 60);
+        add(lengthBox);
+
+        // Controllers
+        packetController = new PacketMovementController(this, systems, lines, movingPackets);
+        portController = new PortController(this, systems, lines, packetController);
+        lineController = new LineController(this, lines, systems);
+        collisionController=new CollisionController(movingPackets);
+        buttonController = new ClickButtonController(this, systems, packetController, collisionController);
+    }
+
+    private void setupNetworkSystems() {
+        // === System S1 ===
         NetworkSystem S1 = new NetworkSystem(100, 100, 100, 200);
-        Port s1_inputSquare1 = new Port(100, 50, PortType.INPUT, PortShape.SQUARE); s1_inputSquare1.setParentSystem(S1);
-        Port s1_inputTriangle1 = new Port(100, 100, PortType.INPUT, PortShape.TRIANGLE); s1_inputTriangle1.setParentSystem(S1);
-        Port s1_inputTriangle2 = new Port(100, 150, PortType.INPUT, PortShape.TRIANGLE); s1_inputTriangle2.setParentSystem(S1);
-        s1_inputSquare1.addPacket(new SquarePacket(s1_inputSquare1));
-        s1_inputTriangle1.addPacket(new TrianglePacket(s1_inputTriangle1));
-        s1_inputTriangle2.addPacket(new TrianglePacket(s1_inputTriangle2));
-        S1.addPort(s1_inputSquare1);
-        S1.addPort(s1_inputTriangle1);
-        S1.addPort(s1_inputTriangle2);
+        Port s1_outputSquare= new Port(0, 50, PortType.OUTPUT, PortShape.SQUARE);
+        Port s1_outputTriangle = new Port(0, 150, PortType.OUTPUT, PortShape.TRIANGLE);
+        Port s1_inputSquare = new Port(100, 50, PortType.INPUT, PortShape.SQUARE);
+        Port s1_inputTri1 = new Port(100, 100, PortType.INPUT, PortShape.TRIANGLE);
+        Port s1_inputTri2 = new Port(100, 150, PortType.INPUT, PortShape.TRIANGLE);
+        Packet firstSquare=new SquarePacket(s1_inputSquare, "first square");
+        Packet secondSquare=new SquarePacket(s1_inputTri1, "second square");
+        Packet firstTriangle=new TrianglePacket(s1_inputTri1, "first triangle");
+        Packet secondTriangle=new TrianglePacket(s1_inputTri2, "second triangle");
+        s1_inputSquare.addPacket(firstSquare);
+        s1_inputSquare.addPacket(secondSquare);
+        s1_inputTri1.addPacket(firstTriangle);
+        s1_inputTri2.addPacket(secondTriangle);
+        S1.addPort(s1_inputSquare);
+        S1.addPort(s1_inputTri1);
+        S1.addPort(s1_inputTri2);
+        S1.addPort(s1_outputSquare);
+        S1.addPort(s1_outputTriangle);
 
-        // System S2
+        // === System S2 ===
         NetworkSystem S2 = new NetworkSystem(400, 700, 100, 200);
-        Port s2_outputSquare1 = new Port(0, 50, PortType.OUTPUT, PortShape.SQUARE); s2_outputSquare1.setParentSystem(S2);
-        Port s2_outputTriangle1 = new Port(0, 100, PortType.OUTPUT, PortShape.TRIANGLE); s2_outputTriangle1.setParentSystem(S2);
-        Port s2_inputSquare1 = new Port(100, 50, PortType.INPUT, PortShape.SQUARE, s2_outputSquare1); s2_inputSquare1.setParentSystem(S2);
-        Port s2_inputTriangle1 = new Port(100, 100, PortType.INPUT, PortShape.TRIANGLE, s1_inputTriangle1); s2_inputTriangle1.setParentSystem(S2);
-        s2_outputSquare1.setEvenPort(s2_inputSquare1);
-        s2_outputTriangle1.setEvenPort(s2_inputTriangle1);
-        S2.addPort(s2_outputSquare1);
-        S2.addPort(s2_outputTriangle1);
-        S2.addPort(s2_inputSquare1);
-        S2.addPort(s2_inputTriangle1);// formerly inTri22
+        Port s2_outSquare = new Port(0, 50, PortType.OUTPUT, PortShape.SQUARE);
+        Port s2_outTri = new Port(0, 100, PortType.OUTPUT, PortShape.TRIANGLE);
+        Port s2_inSquare = new Port(100, 50, PortType.INPUT, PortShape.SQUARE, s2_outSquare);
+        Port s2_inTri = new Port(100, 100, PortType.INPUT, PortShape.TRIANGLE, s1_inputTri1);
+        s2_outSquare.setEvenPort(s2_inSquare);
+        s2_outTri.setEvenPort(s2_inTri);
+        S2.addPort(s2_outSquare);
+        S2.addPort(s2_outTri);
+        S2.addPort(s2_inSquare);
+        S2.addPort(s2_inTri);
 
-
-        // ✅ Add test SquarePacket to output square port;
-
-        // System S3
+        // === System S3 ===
         NetworkSystem S3 = new NetworkSystem(700, 700, 100, 200);
-        Port s3_outputTriangle1 = new Port(0, 50, PortType.OUTPUT, PortShape.TRIANGLE); s3_outputTriangle1.setParentSystem(S3);
-        Port s3_inputTriangle1 = new Port(100, 50, PortType.INPUT, PortShape.TRIANGLE, s3_outputTriangle1); s3_inputTriangle1.setParentSystem(S3);
-        s3_outputTriangle1.setEvenPort(s3_inputTriangle1);
-        S3.addPort(s3_outputTriangle1);
-        S3.addPort(s3_inputTriangle1);
+        Port s3_outTri = new Port(0, 50, PortType.OUTPUT, PortShape.TRIANGLE);
+        Port s3_inTri = new Port(100, 50, PortType.INPUT, PortShape.TRIANGLE, s3_outTri);
+        s3_outTri.setEvenPort(s3_inTri);
+        S3.addPort(s3_outTri);
+        S3.addPort(s3_inTri);
 
-
-        // System S4
+        // === System S4 ===
         NetworkSystem S4 = new NetworkSystem(1200, 250, 100, 200);
-        Port s4_outputTriangle1 = new Port(0, 50, PortType.OUTPUT, PortShape.TRIANGLE); s4_outputTriangle1.setParentSystem(S4);
-        Port s4_outputSquare1 = new Port(0, 100, PortType.OUTPUT, PortShape.SQUARE); s4_outputSquare1.setParentSystem(S4);
-        Port s4_outputTriangle2=new Port(0, 150, PortType.OUTPUT, PortShape.TRIANGLE); s4_outputTriangle2.setParentSystem(S4);
-        S4.addPort(s4_outputTriangle1);
-        S4.addPort(s4_outputTriangle2);
-        S4.addPort(s4_outputSquare1);
+        Port s4_InSquare = new Port(100, 50, PortType.INPUT, PortShape.SQUARE);
+        Port s4_InTri = new Port(100, 150, PortType.INPUT, PortShape.TRIANGLE);
+        Port s4_outTri1 = new Port(0, 50, PortType.OUTPUT, PortShape.TRIANGLE,s4_InTri);
+        Port s4_outSquare = new Port(0, 100, PortType.OUTPUT, PortShape.SQUARE, s4_InSquare);
+        Port s4_outTri2 = new Port(0, 150, PortType.OUTPUT, PortShape.TRIANGLE, s4_InTri);
+        s4_InSquare.setEvenPort(s4_outSquare);
+        S4.addPort(s4_InSquare);
+        S4.addPort(s4_InTri);
+        S4.addPort(s4_outTri1);
+        S4.addPort(s4_outSquare);
+        S4.addPort(s4_outTri2);
 
-
-        // Add systems to the global model
         systems.addSystem(S1);
         systems.addSystem(S2);
         systems.addSystem(S3);
         systems.addSystem(S4);
-
-        systems.setLines(lines);
-        // Controllers
-        packetController = new PacketMovementController(this, systems, lines);
-        portController = new PortController(this, systems, lines, packetController);
-        lineController = new LineController(this, lines, systems);
-        buttonController=new ClickButtonController(this, systems, packetController);
-        // You no longer need to call launchPackets here — movement happens via `onLineAdded`
     }
 
     @Override
@@ -103,7 +122,9 @@ public class GamePanel1 extends JPanel {
 
         // Draw packets
         for (Packet packet : packetController.getMovingPackets()) {
-            packet.draw(g2);
+            if(packet.size>0) {
+                packet.draw(g2);
+            }
         }
 
         // Draw temp line while dragging

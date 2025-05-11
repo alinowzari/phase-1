@@ -139,4 +139,7 @@ public class Port {
         }
         packets.clear();
     }
+    public void removePacket(Packet packet) {
+        packets.remove(packet);
+    }
 }

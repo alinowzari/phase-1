@@ -11,10 +11,12 @@ public class ClickButtonController implements ActionListener {
     private boolean startPressed = false;
     private final Systems systems;
     private final PacketMovementController packetMovementController;
+    private final CollisionController collisionController;
 
-    public ClickButtonController(JPanel panel, Systems systems, PacketMovementController packetMovementController) {
+    public ClickButtonController(JPanel panel, Systems systems, PacketMovementController packetMovementController, CollisionController collisionController) {
         this.systems = systems;
         this.packetMovementController = packetMovementController;
+        this.collisionController = collisionController;
 
         startButton = new JButton("Start");
         startButton.setBounds(10, 10, 100, 30);
@@ -28,7 +30,8 @@ public class ClickButtonController implements ActionListener {
         if (systems.AllPortsConnected()) {
             startPressed = true;
             System.out.println("▶️ Start pressed — ports connected. Starting packet movement.");
-            packetMovementController.startAllMovablePackets();  // 🔁 trigger movement
+            packetMovementController.startAllMovablePackets();
+            collisionController.startCollisionLoop();// 🔁 trigger movement
         } else {
             JOptionPane.showMessageDialog(null, "❌ Not all ports are connected.");
         }
