@@ -13,13 +13,13 @@ public class SquarePacket extends Packet {
     @Override
     public void draw(Graphics2D g) {
         g.setColor(Color.RED);
-        g.fillRect(position.x - 10, position.y - 10, 10, 10);
+        g.fillRect(position.x - 10, position.y - 10, 20, 20);
     }
 
     @Override
     public ArrayList<Point> getAllPoints(Point center) {
         ArrayList<Point> points = new ArrayList<>();
-        int half = size / 2;
+        int half = 10;
 
         for (int dx = -half; dx <= half; dx++) {
             for (int dy = -half; dy <= half; dy++) {

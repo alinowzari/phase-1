@@ -36,7 +36,7 @@ public class GamePanel1 extends JPanel {
         packetController = new PacketMovementController(this, systems, lines, movingPackets);
         portController = new PortController(this, systems, lines, packetController);
         lineController = new LineController(this, lines, systems);
-        collisionController=new CollisionController(movingPackets);
+        collisionController=new CollisionController(movingPackets, lines);
         buttonController = new ClickButtonController(this, systems, packetController, collisionController);
     }
 
@@ -52,6 +52,10 @@ public class GamePanel1 extends JPanel {
         Packet secondSquare=new SquarePacket(s1_inputTri1, "second square");
         Packet firstTriangle=new TrianglePacket(s1_inputTri1, "first triangle");
         Packet secondTriangle=new TrianglePacket(s1_inputTri2, "second triangle");
+        Packet thirdTriangle=new TrianglePacket(s1_inputTri2, "third triangle");
+        Packet forthTriangle=new TrianglePacket(s1_inputTri1, "forth triangle");
+        s1_inputTri1.addPacket(forthTriangle);
+        s1_inputTri2.addPacket(thirdTriangle);
         s1_inputSquare.addPacket(firstSquare);
         s1_inputSquare.addPacket(secondSquare);
         s1_inputTri1.addPacket(firstTriangle);
@@ -122,7 +126,7 @@ public class GamePanel1 extends JPanel {
 
         // Draw packets
         for (Packet packet : packetController.getMovingPackets()) {
-            if(packet.size>0) {
+            if(packet.size>0 && movingPackets.containsPacket(packet)) {
                 packet.draw(g2);
             }
         }

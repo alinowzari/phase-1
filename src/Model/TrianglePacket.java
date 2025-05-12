@@ -26,16 +26,24 @@ public class TrianglePacket extends Packet {
     @Override
     public ArrayList<Point> getAllPoints(Point center) {
         ArrayList<Point> points = new ArrayList<>();
-        int h = size;
+        int half = 15;
 
-        for (int dy = -h / 2; dy <= h / 2; dy++) {
-            int widthAtY = (h / 2) - Math.abs(dy);
-            for (int dx = 0; dx <= widthAtY; dx++) {
-                points.add(new Point(center.x + dx, center.y + dy));
+        Polygon triangle = new Polygon();
+        triangle.addPoint(center.x, center.y - half); // top
+        triangle.addPoint(center.x - half, center.y + half); // bottom-left
+        triangle.addPoint(center.x + half, center.y + half); // bottom-right
+
+        Rectangle bounds = triangle.getBounds();
+        for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
+            for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
+                if (triangle.contains(x, y)) {
+                    points.add(new Point(x, y));
+                }
             }
         }
 
         return points;
     }
+
 
 }
