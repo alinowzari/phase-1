@@ -50,7 +50,10 @@ public class CollisionController {
                 if (now - lastCollisionTime.getOrDefault(key, 0L) < COLLISION_COOLDOWN_MS) {
                     continue;
                 }
-
+                if (a.getPosition() == null || b.getPosition() == null) {
+                    System.out.println("⚠️ Skipped invalid collision pair: " + a.name + " & " + b.name);
+                    continue;
+                }
                 ArrayList<Point> bPoints = b.getAllPoints(b.getPosition());
                 boolean collisionDetected = false;
 
@@ -68,9 +71,9 @@ public class CollisionController {
                     System.out.println("this is the size of "+a.name+" "+ a.size);
                     System.out.println("this is the size of "+b.name+" "+ b.size);
                     System.out.println("Collision: " + a.name + " <-> " + b.name);
-
                     if (a.size <= 0) toRemove.add(a);
                     if (b.size <= 0) toRemove.add(b);
+                    applyAreaImpact(a, b);
                 }
             }
         }
@@ -111,4 +114,71 @@ public class CollisionController {
         p.setCurrentLine(null);
         p.setStartPort(null);
     }
+    private void applyAreaImpact(Packet a, Packet b) {
+        // 1. Get center points
+        Point centerA = a.getPosition();
+        Point centerB = b.getPosition();
+
+        // 2. Compute the collision center C
+        int cx = (centerA.x + centerB.x) / 2;
+        int cy = (centerA.y + centerB.y) / 2;
+        Point c = new Point(cx, cy);
+
+        // 3. Define radius and push strength
+        final int IMPACT_RADIUS = 100;     // Increase for more noticeable range
+        final int MAX_PUSH = 25;           // Increase for stronger visible displacement
+
+        System.out.println("💥 Collision at center: " + c);
+
+        // 4. Move a and b directly using their vector from C
+        displaceByVector(c, a, MAX_PUSH);
+        displaceByVector(c, b, MAX_PUSH);
+
+        // 5. Affect other nearby packets
+        for (Packet p : movingPackets) {
+            if (p == a || p == b) continue;  // Skip the original two
+
+            Point pos = p.getPosition();
+            double dx = pos.x - c.x;
+            double dy = pos.y - c.y;
+            double dist = Math.hypot(dx, dy);
+
+            if (dist > 0 && dist <= IMPACT_RADIUS) {
+                double nx = dx / dist;
+                double ny = dy / dist;
+                double strength = 1.0 - (dist / IMPACT_RADIUS);
+
+                int moveX = (int) (nx * MAX_PUSH * strength);
+                int moveY = (int) (ny * MAX_PUSH * strength);
+                Point newPos = new Point(pos.x + moveX, pos.y + moveY);
+
+                System.out.printf("   ↪ %s moved from %s to %s (Δx=%d, Δy=%d)\n",
+                        p.name, pos, newPos, moveX, moveY);
+
+                p.setPosition(newPos);
+            }
+        }
+    }
+
+    // 🔧 Utility method to move a packet based on vector from origin point
+    private void displaceByVector(Point from, Packet target, int magnitude) {
+        Point pos = target.getPosition();
+        double dx = pos.x - from.x;
+        double dy = pos.y - from.y;
+        double dist = Math.hypot(dx, dy);
+
+        if (dist > 0) {
+            double nx = dx / dist;
+            double ny = dy / dist;
+
+            int moveX = (int) (nx * magnitude);
+            int moveY = (int) (ny * magnitude);
+            Point newPos = new Point(pos.x + moveX, pos.y + moveY);
+
+            System.out.printf("   👉 Direct move: %s from %s to %s\n", target.name, pos, newPos);
+
+            target.setPosition(newPos);
+        }
+    }
+
 }

@@ -137,6 +137,7 @@ public void startAllMovablePackets() {
                     Queue<Packet> queue = packetQueue.computeIfAbsent(line, k -> new LinkedList<>());
                     for (Packet packet : port.getPackets()) {
                         if (packet.getCurrentLine() == null) {
+                            packet.setPosition(port.getPortCenter());
                             packet.setCurrentLine(line);
                             queue.offer(packet);
                         }
