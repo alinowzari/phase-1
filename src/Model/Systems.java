@@ -61,10 +61,4 @@ public class Systems {
         }
         return packets;
     }
-    public int firstSystemPackets(){
-        return systems.get(0).packetCount();
-    }
-    public NetworkSystem getFirstSystem() {
-        return systems.get(0);
-    }
 }

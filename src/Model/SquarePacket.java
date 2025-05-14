@@ -3,6 +3,8 @@ package Model;
 import java.awt.*;
 import java.util.ArrayList;
 
+import static Model.PortShape.SQUARE;
+
 public class SquarePacket extends Packet {
 
     public SquarePacket(Port port, String name) {
@@ -15,7 +17,10 @@ public class SquarePacket extends Packet {
         g.setColor(Color.RED);
         g.fillRect(position.x - 10, position.y - 10, 20, 20);
     }
-
+    @Override
+    public PortShape getShape() {
+        return SQUARE;
+    }
     @Override
     public ArrayList<Point> getAllPoints(Point center) {
         ArrayList<Point> points = new ArrayList<>();

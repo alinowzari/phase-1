@@ -16,11 +16,13 @@ public class PacketMovementController {
     private final ArrayList<Packet> movingPackets = new ArrayList<>();
     private MovingPackets moving;
     private final Map<Line, Queue<Packet>> packetQueue = new HashMap<>();
-    public PacketMovementController(GamePanel1 panel, Systems systems, ArrayList<Line> lines, MovingPackets movingPacket) {
+    private final CoinCounter coinCounter;
+    public PacketMovementController(GamePanel1 panel, Systems systems, ArrayList<Line> lines, MovingPackets movingPacket, CoinCounter coinCounter) {
         this.panel = panel;
         this.systems = systems;
         this.lines = lines;
         this.moving = movingPacket;
+        this.coinCounter = coinCounter;
     }
 
 
@@ -49,13 +51,16 @@ public class PacketMovementController {
             final float speed = 3f;
             final float totalDistance = (float) start.distance(end);
             float traveled = 0f;
-            private Port parentalPort=packet.getStartPort();
+            ;
             @Override
             public void actionPerformed(ActionEvent e) {
                 line.setMovingPacket(packet);
                 traveled += speed;
-                parentalPort.removePacket(packet);
+
+
                 if (traveled >= totalDistance) {
+                    coinCounter.addCoinAmount(10);
+                    panel.updateCoinDisplay();
                     ((Timer) e.getSource()).stop();
                     packet.setPosition(end);
                     movingPackets.remove(packet);
@@ -67,14 +72,14 @@ public class PacketMovementController {
 // ✅ Remove from previous port
                     Port currentPort = packet.getStartPort();
                     if (currentPort != null) {
-                        currentPort.removePacket(packet);
+                        packet.getStartPort().removePacket(packet);
                     }
 
 // ✅ Update ownership
                     packet.setCurrentLine(null);
                     if (packet.size > 0) {
                         packet.setStartPort(destinationPort);
-                        destinationPort.addPacket(packet);
+                        line.getEndPort().addPacket(packet);
                     }
 
 // 🚀 Try queueing next packet
@@ -82,9 +87,9 @@ public class PacketMovementController {
 
 // 🔁 Reroute through evenPort if needed
                     if (destinationPort.getType() == PortType.OUTPUT && destinationPort.getEvenPort() != null) {
-                        destinationPort.ChangePort();
-                        destinationPort.removePacket(packet); // Important clean-up
-                        Port evenPort = destinationPort.getEvenPort();
+                        line.getEndPort().ChangePort();
+                        line.getEndPort().removePacket(packet); // Important clean-up
+                        Port evenPort = line.getEndPort().getEvenPort();
                         Line nextLine = findLineFromPort(evenPort);
 
                         if (nextLine != null) {
@@ -95,7 +100,7 @@ public class PacketMovementController {
                             checkAndStartQueuedPackets();
                         }
                     }
-                    parentalPort.removePacket(packet);
+                    packet.getStartPort().removePacket(packet);
                     panel.repaint();
                     return;
                 }
@@ -114,43 +119,28 @@ public class PacketMovementController {
     public ArrayList<Packet> getMovingPackets() {
         return movingPackets;
     }
-    public void onLineAdded(Line line) {
-        Port startPort = line.getStartPort();
-
-        if (startPort.getType() == PortType.INPUT && !startPort.getPackets().isEmpty()) {
-            for (Packet packet : startPort.getPackets()) {
-                if (packet.getCurrentLine() == null) {
-                    packet.setCurrentLine(line);
-                    startMovement(packet, line);
-                    movingPackets.add(packet);
-                }
-            }
-            startPort.getPackets().clear(); // optional: clear the port's queue
-        }
-    }
-public void startAllMovablePackets() {
-    for (NetworkSystem system : systems.getSystems()) {
-        for (Port port : system.getPorts()) {
-            if (port.getType() == PortType.INPUT && !port.getPackets().isEmpty()) {
-                Line line = findLineFromPort(port);
-                if (line != null) {
-                    Queue<Packet> queue = packetQueue.computeIfAbsent(line, k -> new LinkedList<>());
-                    for (Packet packet : port.getPackets()) {
-                        if (packet.getCurrentLine() == null) {
-                            packet.setPosition(port.getPortCenter());
-                            packet.setCurrentLine(line);
-                            queue.offer(packet);
+    public void startAllMovablePackets() {
+        for (NetworkSystem system : systems.getSystems()) {
+            for (Port port : system.getPorts()) {
+                if (port.getType() == PortType.INPUT && !port.getPackets().isEmpty()) {
+                    Line line = findLineFromPort(port);
+                    if (line != null) {
+                        Queue<Packet> queue = packetQueue.computeIfAbsent(line, k -> new LinkedList<>());
+                        for (Packet packet : port.getPackets()) {
+                            if (packet.getCurrentLine() == null) {
+                                packet.setCurrentLine(line);
+                                queue.offer(packet);
+                            }
                         }
+                        port.getPackets().clear();
                     }
-                    port.getPackets().clear();
                 }
             }
         }
-    }
 
-    // Start packets on any available lines
-    checkAndStartQueuedPackets();
-}
+        // Start packets on any available lines
+        checkAndStartQueuedPackets();
+    }
     private void checkAndStartQueuedPackets() {
         for (Map.Entry<Line, Queue<Packet>> entry : packetQueue.entrySet()) {
             Line line = entry.getKey();

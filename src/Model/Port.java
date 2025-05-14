@@ -32,6 +32,9 @@ public class Port {
     public void setParentSystem(NetworkSystem parent) {
         this.parentSystem = parent;
     }
+    public PortType portType() {
+        return type;
+    }
     public NetworkSystem getParentSystem() {
         return parentSystem;
     }

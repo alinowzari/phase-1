@@ -3,7 +3,7 @@ package Model;
 import java.awt.*;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-
+import static Model.PortShape.TRIANGLE;
 public class TrianglePacket extends Packet {
 
     public TrianglePacket(Port port, String name) {
@@ -22,6 +22,10 @@ public class TrianglePacket extends Packet {
 
         g.setColor(Color.BLUE);
         g.fillPolygon(triangle);
+    }
+    @Override
+    public PortShape getShape(){
+        return TRIANGLE;
     }
     @Override
     public ArrayList<Point> getAllPoints(Point center) {

@@ -31,7 +31,7 @@ public class ClickButtonController implements ActionListener {
             startPressed = true;
             System.out.println("▶️ Start pressed — ports connected. Starting packet movement.");
             packetMovementController.startAllMovablePackets();
-            collisionController.startCollisionLoop();// 🔁 trigger movement
+           collisionController.startCollisionLoop();// 🔁 trigger movement
         } else {
             JOptionPane.showMessageDialog(null, "❌ Not all ports are connected.");
         }

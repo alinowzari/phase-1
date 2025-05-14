@@ -17,6 +17,8 @@ public class GamePanel1 extends JPanel {
     private final MovingPackets movingPackets;
     private final CollisionController collisionController;
     private final LengthBoxPanel lengthBox;
+    private final CoinCounter coinCounter = new CoinCounter(0);
+    private JLabel coinLabel;
 
     public GamePanel1(Systems systems) {
         this.systems = systems;
@@ -30,10 +32,15 @@ public class GamePanel1 extends JPanel {
         systems.setLines(lines);
         lengthBox = new LengthBoxPanel(systems);
         lengthBox.setBounds(900, 10, 60, 60);
+        coinLabel = new JLabel("Coins: " + coinCounter.getCoin());
+        coinLabel.setForeground(Color.WHITE);
+        coinLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        coinLabel.setBounds(980, 10, 150, 30); // adjust position/size as needed
+        add(coinLabel);
         add(lengthBox);
 
         // Controllers
-        packetController = new PacketMovementController(this, systems, lines, movingPackets);
+        packetController = new PacketMovementController(this, systems, lines, movingPackets, coinCounter);
         portController = new PortController(this, systems, lines, packetController);
         lineController = new LineController(this, lines, systems);
         collisionController=new CollisionController(movingPackets, lines);
@@ -42,7 +49,7 @@ public class GamePanel1 extends JPanel {
 
     private void setupNetworkSystems() {
         // === System S1 ===
-        NetworkSystem S1 = new NetworkSystem(100, 100, 100, 200);
+        NetworkSystem S1 = new NetworkSystem(100, 100, 100, 200, "first s");
         Port s1_outputSquare= new Port(0, 50, PortType.OUTPUT, PortShape.SQUARE);
         Port s1_outputTriangle = new Port(0, 150, PortType.OUTPUT, PortShape.TRIANGLE);
         Port s1_inputSquare = new Port(100, 50, PortType.INPUT, PortShape.SQUARE);
@@ -60,14 +67,21 @@ public class GamePanel1 extends JPanel {
         s1_inputSquare.addPacket(secondSquare);
         s1_inputTri1.addPacket(firstTriangle);
         s1_inputTri2.addPacket(secondTriangle);
+        S1.addPacket(firstSquare);
+        S1.addPacket(secondSquare);
+        S1.addPacket(thirdTriangle);
+        S1.addPacket(forthTriangle);
+        S1.addPacket(firstTriangle);
+        S1.addPacket(secondTriangle);
         S1.addPort(s1_inputSquare);
         S1.addPort(s1_inputTri1);
         S1.addPort(s1_inputTri2);
         S1.addPort(s1_outputSquare);
         S1.addPort(s1_outputTriangle);
+        S1.setHomeSystem();
 
         // === System S2 ===
-        NetworkSystem S2 = new NetworkSystem(400, 700, 100, 200);
+        NetworkSystem S2 = new NetworkSystem(400, 700, 100, 200, "second s");
         Port s2_outSquare = new Port(0, 50, PortType.OUTPUT, PortShape.SQUARE);
         Port s2_outTri = new Port(0, 100, PortType.OUTPUT, PortShape.TRIANGLE);
         Port s2_inSquare = new Port(100, 50, PortType.INPUT, PortShape.SQUARE, s2_outSquare);
@@ -80,7 +94,7 @@ public class GamePanel1 extends JPanel {
         S2.addPort(s2_inTri);
 
         // === System S3 ===
-        NetworkSystem S3 = new NetworkSystem(700, 700, 100, 200);
+        NetworkSystem S3 = new NetworkSystem(700, 700, 100, 200, "third s");
         Port s3_outTri = new Port(0, 50, PortType.OUTPUT, PortShape.TRIANGLE);
         Port s3_inTri = new Port(100, 50, PortType.INPUT, PortShape.TRIANGLE, s3_outTri);
         s3_outTri.setEvenPort(s3_inTri);
@@ -88,7 +102,7 @@ public class GamePanel1 extends JPanel {
         S3.addPort(s3_inTri);
 
         // === System S4 ===
-        NetworkSystem S4 = new NetworkSystem(1200, 250, 100, 200);
+        NetworkSystem S4 = new NetworkSystem(1200, 250, 100, 200, "forth s");
         Port s4_InSquare = new Port(100, 50, PortType.INPUT, PortShape.SQUARE);
         Port s4_InTri = new Port(100, 150, PortType.INPUT, PortShape.TRIANGLE);
         Port s4_outTri1 = new Port(0, 50, PortType.OUTPUT, PortShape.TRIANGLE,s4_InTri);
@@ -135,5 +149,8 @@ public class GamePanel1 extends JPanel {
         if (portController.getTempLine() != null) {
             portController.getTempLine().draw(g2);
         }
+    }
+    public void updateCoinDisplay() {
+        coinLabel.setText("Coins: " + coinCounter.getCoin());
     }
 }

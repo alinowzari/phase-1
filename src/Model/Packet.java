@@ -8,15 +8,22 @@ public abstract class Packet {
     protected Port startPort;
     protected Line currentLine;  // null until matched
     public int size;
-    private Port parentPort;
     public String name;
+    private boolean isAlive;
 
     public Packet(Port startPort, String name) {
         this.startPort = startPort;
         this.position = new Point(startPort.getPortCenter());
         this.name = name;
+        isAlive = true;
     }
-
+    public void isDead(){
+        isAlive = false;
+    }
+    public void deletePort(){
+        startPort=null;
+    }
+    public abstract PortShape getShape();
     public Port getStartPort() {
         return startPort;
     }
